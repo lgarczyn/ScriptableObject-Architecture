@@ -79,6 +79,10 @@ namespace ScriptableObjectArchitecture
         {
             return Value.ToString();
         }
+        
+        public static implicit operator TBase 
+            (BaseReference<TBase, TVariable> a)
+            => a.Value;
     }
 
     //Can't get property drawer to work with generic arguments
