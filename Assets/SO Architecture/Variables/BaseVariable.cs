@@ -1,5 +1,6 @@
-﻿using UnityEngine;
-using UnityEngine.Events;
+﻿using System;
+using System.Collections.Generic;
+using UnityEngine;
 
 namespace ScriptableObjectArchitecture
 {
@@ -8,7 +9,7 @@ namespace ScriptableObjectArchitecture
         public abstract bool IsClamped { get; }
         public abstract bool Clampable { get; }
         public abstract bool ReadOnly { get; }
-        public abstract System.Type Type { get; }
+        public abstract Type Type { get; }
         public abstract object BaseValue { get; set; }
     }
     public abstract class BaseVariable<T> : BaseVariable
@@ -23,6 +24,7 @@ namespace ScriptableObjectArchitecture
             {
                 _value = SetValue(value);
                 Raise();
+                Raise(_value);
             }
         }
         public virtual T MinClampValue
@@ -57,7 +59,7 @@ namespace ScriptableObjectArchitecture
         public override bool Clampable { get { return false; } }
         public override bool ReadOnly { get { return _readOnly; } }
         public override bool IsClamped { get { return _isClamped; } }
-        public override System.Type Type { get { return typeof(T); } }
+        public override Type Type { get { return typeof(T); } }
         public override object BaseValue
         {
             get
@@ -68,15 +70,16 @@ namespace ScriptableObjectArchitecture
             {
                 _value = SetValue((T)value);
                 Raise();
+                Raise(_value);
             }
         }
 
         [SerializeField]
         protected T _value = default(T);
         [SerializeField]
-        private bool _readOnly = false;
+        protected bool _readOnly = false;
         [SerializeField]
-        private bool _raiseWarning = true;
+        protected bool _raiseWarning = true;
         [SerializeField]
         protected bool _isClamped = false;
         [SerializeField]
@@ -84,11 +87,30 @@ namespace ScriptableObjectArchitecture
         [SerializeField]
         protected T _maxClampedValue = default(T);
 
-        public virtual T SetValue(BaseVariable<T> value)
+        protected readonly List<Action<T>> _typedActions = new List<Action<T>>();
+
+        public void AddListener(Action<T> action)
         {
-            return SetValue(value.Value);
+            if (!_typedActions.Contains(action))
+                _typedActions.Add(action);
         }
-        public virtual T SetValue(T value)
+        public void RemoveListener(Action<T> action)
+        {
+            if (!_typedActions.Contains(action))
+                _typedActions.Remove(action);
+        }
+        public void Raise(T value)
+        {
+            for (var i = _typedActions.Count - 1; i >= 0; --i)
+                _typedActions[i].Invoke(value);               
+        }
+        /// <summary>
+        /// Processes new values. Does not actually change Value property.
+        /// Applies clamps, checks for readonly.
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns>Value after processing.</returns>
+        protected virtual T SetValue(T value)
         {
             if (_readOnly)
             {
@@ -101,12 +123,13 @@ namespace ScriptableObjectArchitecture
             }
 
             return value;
-        }        
+        }
+
         protected virtual T ClampValue(T value)
         {
             return value;
         }
-        private void RaiseReadonlyWarning()
+        protected void RaiseReadonlyWarning()
         {
             if (!_readOnly || !_raiseWarning)
                 return;
@@ -121,34 +144,5 @@ namespace ScriptableObjectArchitecture
         {
             return variable.Value;
         }
-    }
-    public abstract class BaseVariable<T, TEvent> : BaseVariable<T> where TEvent : UnityEvent<T>
-    {
-        [SerializeField]
-        private TEvent _event = default(TEvent);
-
-        public override T SetValue(T value)
-        {
-            T oldValue = _value;
-            T newValue = base.SetValue(value);
-
-            if (!newValue.Equals(oldValue))
-                _event.Invoke(newValue);
-
-            return newValue;
-        }
-        public void AddListener(UnityAction<T> callback)
-        {
-            _event.AddListener(callback);
-        }
-        public void RemoveListener(UnityAction<T> callback)
-        {
-            _event.RemoveListener(callback);
-        }
-        public override void RemoveAll()
-        {
-            base.RemoveAll();
-            _event.RemoveAllListeners();
-        }
-    }
+    } 
 }
