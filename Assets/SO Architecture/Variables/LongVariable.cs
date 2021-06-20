@@ -1,16 +1,12 @@
 ﻿using UnityEngine;
-using UnityEngine.Events;
 
 namespace ScriptableObjectArchitecture
 {
-    [System.Serializable]
-    public class LongEvent : UnityEvent<long> { }
-
     [CreateAssetMenu(
         fileName = "LongVariable.asset",
         menuName = SOArchitecture_Utility.ADVANCED_VARIABLE_SUBMENU + "long",
         order = SOArchitecture_Utility.ASSET_MENU_ORDER_COLLECTIONS + 9)]
-    public class LongVariable : BaseVariable<long, LongEvent>
+    public class LongVariable : BaseVariable<long>
     {
         public override bool Clampable { get { return true; } }
         protected override long ClampValue(long value)
