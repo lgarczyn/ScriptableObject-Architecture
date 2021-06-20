@@ -20,18 +20,18 @@ namespace ScriptableObjectArchitecture.Editor
         private SerializedProperty _maxValueProperty;
         private AnimBool _raiseWarningAnimation;
         private AnimBool _isClampedVariableAnimation;
-        
+
         private const string READONLY_TOOLTIP = "Should this value be changable during runtime? Will still be editable in the inspector regardless";
 
         protected virtual void OnEnable()
         {
             _valueProperty = serializedObject.FindProperty("_value");
+            _developerDescription = serializedObject.FindProperty("DeveloperDescription");
             _readOnly = serializedObject.FindProperty("_readOnly");
             _raiseWarning = serializedObject.FindProperty("_raiseWarning");
             _isClamped = serializedObject.FindProperty("_isClamped");
             _minValueProperty = serializedObject.FindProperty("_minClampedValue");
             _maxValueProperty = serializedObject.FindProperty("_maxClampedValue");
-            _developerDescription = serializedObject.FindProperty("developerDescription");
 
             _raiseWarningAnimation = new AnimBool(_readOnly.boolValue);
             _raiseWarningAnimation.valueChanged.AddListener(Repaint);
@@ -42,32 +42,25 @@ namespace ScriptableObjectArchitecture.Editor
         public override void OnInspectorGUI()
         {
             serializedObject.Update();
-            DrawDeveloperDescription();
-
-            EditorGUILayout.Space();
 
             DrawValue();
-
-            EditorGUILayout.Space();
-
             DrawClampedFields();
             DrawReadonlyField();
-            EditorGUILayout.Space();
-            DrawRaiseButton();
+            DrawDeveloperDescription();
         }
         protected virtual void DrawValue()
         {
             using (var scope = new EditorGUI.ChangeCheckScope())
             {
                 string content = "Cannot display value. No PropertyDrawer for (" + Target.Type + ") [" + Target.ToString() + "]";
-                GenericPropertyDrawer.DrawPropertyDrawerLayout(_valueProperty, Target.Type);
+                GenericPropertyDrawer.DrawPropertyDrawerLayout(Target.Type, new GUIContent("Value"), _valueProperty, new GUIContent(content, content));
 
                 if (scope.changed)
                 {
-                    serializedObject.ApplyModifiedProperties();
-
                     // Value changed, raise events
-                    Target.Raise();
+                    //Target.Raise();
+                    serializedObject.ApplyModifiedProperties(); //upate with value
+                    Target.BaseValue = Target.BaseValue; //force Raise() and possibly Raise(T)
                 }
             }
         }
@@ -92,17 +85,13 @@ namespace ScriptableObjectArchitecture.Editor
             }
             
         }
-        protected virtual void DrawRaiseButton()
-        {
-            if (GUILayout.Button("Raise"))
-            {
-                Target.Raise();
-            }
-        }
         protected void DrawReadonlyField()
         {
-            if (_isClamped.boolValue)
+            if (IsClamped)
+            {
+                _readOnly.boolValue = false;
                 return;
+            }
 
             EditorGUILayout.PropertyField(_readOnly, new GUIContent("Read Only", READONLY_TOOLTIP));
 
@@ -120,20 +109,6 @@ namespace ScriptableObjectArchitecture.Editor
         protected void DrawDeveloperDescription()
         {
             EditorGUILayout.PropertyField(_developerDescription);
-        }
-    }
-    [CustomEditor(typeof(BaseVariable<,>), true)]
-    public class BaseVariableWithEventEditor : BaseVariableEditor
-    {
-        public override void OnInspectorGUI()
-        {
-            base.OnInspectorGUI();
-
-            EditorGUILayout.Space();
-
-            EditorGUILayout.PropertyField(serializedObject.FindProperty("_event"));
-
-            serializedObject.ApplyModifiedProperties();
         }
     }
 }
