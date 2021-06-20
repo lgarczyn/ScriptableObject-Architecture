@@ -6,6 +6,7 @@ namespace ScriptableObjectArchitecture.Editor
     public abstract class BaseGameEventListenerEditor : UnityEditor.Editor
     {
         private IStackTraceObject Target { get { return (IStackTraceObject)target; } }
+        private SerializedProperty DeveloperDescription { get { return serializedObject.FindProperty("DeveloperDescription"); } }
 
         private StackTrace _stackTrace;
         private SerializedProperty _event;
@@ -37,6 +38,8 @@ namespace ScriptableObjectArchitecture.Editor
             {
                 DrawDebugging();
             }
+
+            EditorGUILayout.PropertyField(DeveloperDescription);
 
             serializedObject.ApplyModifiedProperties();
         }

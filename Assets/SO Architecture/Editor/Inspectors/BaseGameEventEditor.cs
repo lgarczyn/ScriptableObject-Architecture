@@ -5,6 +5,7 @@ namespace ScriptableObjectArchitecture.Editor
     public abstract class BaseGameEventEditor : UnityEditor.Editor
     {
         private IStackTraceObject Target { get { return (IStackTraceObject)target; } }
+        private SerializedProperty DeveloperDescription { get { return serializedObject.FindProperty("DeveloperDescription"); } }
 
         private StackTrace _stackTrace;
 
@@ -19,10 +20,12 @@ namespace ScriptableObjectArchitecture.Editor
         {
             DrawRaiseButton();
 
-            if (!SOArchitecturePreferences.IsDebugEnabled)
+            if (!SOArchitecture_Settings.Instance.EnableDebug)
                 EditorGUILayout.HelpBox("Debug mode disabled\nStack traces will not be filed on raise!", MessageType.Warning);
 
             _stackTrace.Draw();
+
+            EditorGUILayout.PropertyField(DeveloperDescription);
         }
     }
 }

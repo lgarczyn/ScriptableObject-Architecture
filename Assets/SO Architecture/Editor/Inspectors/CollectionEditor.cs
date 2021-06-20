@@ -8,6 +8,10 @@ namespace ScriptableObjectArchitecture.Editor
     public class CollectionEditor : UnityEditor.Editor
     {
         private BaseCollection Target { get { return (BaseCollection)target; } }
+        private SerializedProperty DeveloperDescriptionProperty
+        {
+            get { return serializedObject.FindProperty(DESCRIPTION_PROPERTY_NAME); }
+        }
         private SerializedProperty CollectionItemsProperty
         {
             get { return serializedObject.FindProperty(LIST_PROPERTY_NAME);}
@@ -30,6 +34,7 @@ namespace ScriptableObjectArchitecture.Editor
 
         // Property Names
         private const string LIST_PROPERTY_NAME = "_list";
+        private const string DESCRIPTION_PROPERTY_NAME = "DeveloperDescription";
 
         private void OnEnable()
         {
@@ -46,7 +51,6 @@ namespace ScriptableObjectArchitecture.Editor
             {
                 drawHeaderCallback = DrawHeader,
                 drawElementCallback = DrawElement,
-                elementHeightCallback = GetHeight,
             };
         }
         public override void OnInspectorGUI()
@@ -54,6 +58,8 @@ namespace ScriptableObjectArchitecture.Editor
             EditorGUI.BeginChangeCheck();
 
             _reorderableList.DoLayoutList();
+
+            EditorGUILayout.PropertyField(DeveloperDescriptionProperty);
 
             if (EditorGUI.EndChangeCheck())
             {
@@ -71,15 +77,9 @@ namespace ScriptableObjectArchitecture.Editor
 
             EditorGUI.BeginDisabledGroup(DISABLE_ELEMENTS);
 
-            GenericPropertyDrawer.DrawPropertyDrawer(rect, property, Target.Type);
+            GenericPropertyDrawer.DrawPropertyDrawer(rect, new GUIContent("Element " + index), Target.Type, property, _noPropertyDrawerWarningGUIContent);
 
             EditorGUI.EndDisabledGroup();
-        }
-        private float GetHeight(int index)
-        {
-            SerializedProperty property = CollectionItemsProperty.GetArrayElementAtIndex(index);
-
-            return GenericPropertyDrawer.GetHeight(property, Target.Type) + EditorGUIUtility.standardVerticalSpacing;
         }
     }
 }
