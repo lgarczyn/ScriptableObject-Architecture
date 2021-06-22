@@ -8,6 +8,7 @@ namespace ScriptableObjectArchitecture
     {
         public abstract bool IsClamped { get; }
         public abstract bool Clampable { get; }
+        public abstract bool IsInitializeable { get; }
         public abstract bool ReadOnly { get; }
         public abstract Type Type { get; }
         public abstract object BaseValue { get; set; }
@@ -24,7 +25,6 @@ namespace ScriptableObjectArchitecture
             {
                 _value = SetValue(value);
                 Raise();
-                Raise(_value);
             }
         }
         public virtual T MinClampValue
@@ -59,6 +59,7 @@ namespace ScriptableObjectArchitecture
         public override bool Clampable { get { return false; } }
         public override bool ReadOnly { get { return _readOnly; } }
         public override bool IsClamped { get { return _isClamped; } }
+        public override bool IsInitializeable { get => false; }
         public override Type Type { get { return typeof(T); } }
         public override object BaseValue
         {
@@ -70,12 +71,17 @@ namespace ScriptableObjectArchitecture
             {
                 _value = SetValue((T)value);
                 Raise();
-                Raise(_value);
             }
         }
 
         [SerializeField]
         protected T _value = default(T);
+        [SerializeField]
+        [Tooltip("The starting Value.")]
+        protected T _initialValue = default(T);
+        [SerializeField]
+        [Tooltip("Should this Value start at a specific value OnEnable?")]
+        protected bool _initialize = true;
         [SerializeField]
         protected bool _readOnly = false;
         [SerializeField]
@@ -89,6 +95,11 @@ namespace ScriptableObjectArchitecture
 
         protected readonly List<Action<T>> _typedActions = new List<Action<T>>();
 
+        protected virtual void OnEnable()
+        {
+            Initialize();
+        }
+
         public void AddListener(Action<T> action)
         {
             if (!_typedActions.Contains(action))
@@ -97,6 +108,11 @@ namespace ScriptableObjectArchitecture
         public void RemoveListener(Action<T> action)
         {
             _typedActions.Remove(action);
+        }
+        public override void Raise()
+        {
+            base.Raise();
+            Raise(_value);
         }
         public void Raise(T value)
         {
@@ -124,16 +140,19 @@ namespace ScriptableObjectArchitecture
             return value;
         }
 
-        protected virtual T ClampValue(T value)
+        protected virtual T ClampValue(T value) => value;
+
+        public void Initialize()
         {
-            return value;
+            if (IsInitializeable && _initialize)
+                Value = _initialValue;
         }
+
         protected void RaiseReadonlyWarning()
         {
-            if (!_readOnly || !_raiseWarning)
-                return;
-
-            Debug.LogWarning("Tried to set value on " + name + ", but value is readonly!", this);
+            if (_readOnly && _raiseWarning)
+                Debug.LogWarning("Tried to set value on " + name 
+                    + ", but value is readonly!", this);
         }
         public override string ToString()
         {
