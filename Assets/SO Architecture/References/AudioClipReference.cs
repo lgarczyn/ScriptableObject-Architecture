@@ -2,11 +2,22 @@ using UnityEngine;
 
 namespace ScriptableObjectArchitecture
 {
-	[System.Serializable]
-	public sealed class AudioClipReference : BaseReference<AudioClip, AudioClipVariable>
-	{
-	    public AudioClipReference() : base() { }
-	    public AudioClipReference(AudioClip value) : base(value) { }
+    [System.Serializable]
+    public sealed class AudioClipReference : BaseReference<AudioClip, AudioClipVariable>
+    {
+        private AudioOptions options = AudioOptions.DefaultSFX;
+
+        public AudioClipReference() : base() { }
+        public AudioClipReference(AudioClip value) : base(value)
+        {
+            options = AudioOptions.DefaultSFX;
+        }
+
+        public AudioClipReference(AudioClip value, AudioOptions options)
+            : base(value)
+        {
+            this.options = options;
+        }
 
         /// <summary>
         /// AudioClip options that indicate how this clip should be played.
@@ -14,7 +25,7 @@ namespace ScriptableObjectArchitecture
         public AudioOptions Options
         {
             get => (_useConstant || _variable == null) 
-                ? AudioOptions.DefaultSFX : _variable.Options;
+                ? options : _variable.Options;
 
             set
             {
@@ -25,9 +36,9 @@ namespace ScriptableObjectArchitecture
                 else
                 {
                     _useConstant = true;
-                    //myOptions = value; can't set default
+                    options = value;
                 }
             }
         }
-	}
+    }
 }
