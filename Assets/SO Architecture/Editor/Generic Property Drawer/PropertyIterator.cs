@@ -19,7 +19,7 @@ namespace ScriptableObjectArchitecture.Editor
         protected readonly SerializedProperty iterator;
         protected readonly SerializedProperty endProperty;
 
-        private bool consumeChildren;
+        protected bool consumeChildren;
         private int parentDepth;
 
         public virtual bool Next()
